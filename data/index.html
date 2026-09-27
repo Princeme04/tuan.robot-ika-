@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32 Web Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Navigation / Header -->
+    <header class="dashboard-header">
+      <div class="header-brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+            <rect x="9" y="9" width="6" height="6"></rect>
+            <line x1="9" y1="1" x2="9" y2="4"></line>
+            <line x1="15" y1="1" x2="15" y2="4"></line>
+            <line x1="9" y1="20" x2="9" y2="23"></line>
+            <line x1="15" y1="20" x2="15" y2="23"></line>
+            <line x1="20" y1="9" x2="23" y2="9"></line>
+            <line x1="20" y1="14" x2="23" y2="14"></line>
+            <line x1="1" y1="9" x2="4" y1="9"></line>
+            <line x1="1" y1="14" x2="4" y2="14"></line>
+          </svg>
+        </div>
+        <div>
+          <h1 class="header-title">ESP32 Dashboard</h1>
+          <p class="header-subtitle">ESP32 Web Monitor &amp; Control</p>
+        </div>
+      </div>
+
+      <div class="header-status">
+        <div id="connection-badge" class="status-badge badge-connecting">
+          <span class="status-dot"></span>
+          <span id="connection-text">CONNECTING</span>
+        </div>
+        <div id="last-updated-text" class="last-updated">Connecting to ESP32...</div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-main">
+      
+      <!-- Top Overview Metrics Grid (6 Cards) -->
+      <section class="metrics-grid">
+        
+        <!-- Status Card -->
+        <div class="card metric-card">
+          <div class="metric-label">STATUS</div>
+          <div class="metric-value-row">
+            <span id="metric-status" class="metric-value text-muted">--</span>
+          </div>
+          <div class="metric-footer" id="metric-status-sub">Checking node health</div>
+        </div>
+
+        <!-- Uptime Card -->
+        <div class="card metric-card">
+          <div class="metric-label">UPTIME</div>
+          <div class="metric-value-row">
+            <span id="metric-uptime" class="metric-value">--</span>
+          </div>
+          <div class="metric-footer" id="metric-uptime-raw">System active time</div>
+        </div>
+
+        <!-- Free Heap Card -->
+        <div class="card metric-card">
+          <div class="metric-label">FREE HEAP</div>
+          <div class="metric-value-row">
+            <span id="metric-free-heap" class="metric-value">--</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="heap-progress-bar" class="progress-bar" style="width: 0%;"></div>
+          </div>
+          <div class="metric-footer" id="metric-heap-percentage">Calculating usage...</div>
+        </div>
+
+        <!-- Wi-Fi Signal Card -->
+        <div class="card metric-card">
+          <div class="metric-label">WIFI SIGNAL</div>
+          <div class="metric-value-row">
+            <span id="metric-rssi" class="metric-value">--</span>
+            <span id="rssi-rating-badge" class="badge-sub">--</span>
+          </div>
+          <div class="signal-bars" id="signal-bars">
+            <span class="bar bar-1"></span>
+            <span class="bar bar-2"></span>
+            <span class="bar bar-3"></span>
+            <span class="bar bar-4"></span>
+          </div>
+          <div class="metric-footer" id="metric-rssi-sub">RSSI Signal strength</div>
+        </div>
+
+        <!-- CPU Frequency Card -->
+        <div class="card metric-card">
+          <div class="metric-label">CPU FREQUENCY</div>
+          <div class="metric-value-row">
+            <span id="metric-cpu" class="metric-value">--</span>
+          </div>
+          <div class="metric-footer" id="metric-cpu-cores">Dual Core Xtensa LX6</div>
+        </div>
+
+        <!-- IP Address Card -->
+        <div class="card metric-card">
+          <div class="metric-label">IP ADDRESS</div>
+          <div class="metric-value-row">
+            <span id="metric-ip" class="metric-value text-accent">--</span>
+          </div>
+          <div class="metric-footer" id="metric-mac">MAC: --:--:--:--:--:--</div>
+        </div>
+
+      </section>
+
+      <!-- Details Section: System Info, Wi-Fi Info, and Controls -->
+      <div class="details-layout">
+        
+        <!-- System Information Table Card -->
+        <section class="card detail-card">
+          <div class="card-header">
+            <div class="card-header-left">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+              </svg>
+              <h2 class="card-title">System Information</h2>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-refresh-system" title="Refresh System Info">
+              <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              Refresh
+            </button>
+          </div>
+          
+          <div class="info-table">
+            <div class="info-row">
+              <span class="info-key">Chip Model</span>
+              <span class="info-val" id="sys-chip-model">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">Chip Revision</span>
+              <span class="info-val" id="sys-chip-rev">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">CPU Cores</span>
+              <span class="info-val" id="sys-cpu-cores">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">CPU Clock Speed</span>
+              <span class="info-val" id="sys-cpu-freq">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">Total Heap RAM</span>
+              <span class="info-val" id="sys-total-heap">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">Free Heap RAM</span>
+              <span class="info-val" id="sys-free-heap">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">Min Free Heap (Watermark)</span>
+              <span class="info-val" id="sys-min-heap">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">Max Allocatable Heap Block</span>
+              <span class="info-val" id="sys-max-alloc">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">Flash Memory Size</span>
+              <span class="info-val" id="sys-flash-size">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">Flash Memory Speed</span>
+              <span class="info-val" id="sys-flash-speed">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">Firmware Sketch Size</span>
+              <span class="info-val" id="sys-sketch-size">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">Free Flash Space for Sketch</span>
+              <span class="info-val" id="sys-free-sketch">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">Reset Reason</span>
+              <span class="info-val" id="sys-reset-reason">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-key">ESP-IDF SDK Version</span>
+              <span class="info-val" id="sys-sdk-ver">--</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Right Column: Network Information & Actions Card -->
+        <div class="right-stack">
+          
+          <!-- Network Information Card -->
+          <section class="card detail-card">
+            <div class="card-header">
+              <div class="card-header-left">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+                  <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+                  <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+                  <line x1="12" y1="20" x2="12.01" y2="20"></line>
+                </svg>
+                <h2 class="card-title">Network Information</h2>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btn-refresh-wifi" title="Refresh WiFi Info">
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                Refresh
+              </button>
+            </div>
+            
+            <div class="info-table">
+              <div class="info-row">
+                <span class="info-key">Wi-Fi Status</span>
+                <span class="info-val" id="net-status">--</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">SSID</span>
+                <span class="info-val text-accent" id="net-ssid">--</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">IP Address</span>
+                <span class="info-val" id="net-ip">--</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Gateway IP</span>
+                <span class="info-val" id="net-gateway">--</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Subnet Mask</span>
+                <span class="info-val" id="net-subnet">--</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">MAC Address</span>
+                <span class="info-val" id="net-mac">--</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Wi-Fi RSSI</span>
+                <span class="info-val" id="net-rssi">--</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">Wi-Fi Channel</span>
+                <span class="info-val" id="net-channel">--</span>
+              </div>
+              <div class="info-row">
+                <span class="info-key">BSSID (AP MAC)</span>
+                <span class="info-val" id="net-bssid">--</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- System Actions / Control Card -->
+          <section class="card detail-card action-card">
+            <div class="card-header">
+              <div class="card-header-left">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                <h2 class="card-title">System Actions</h2>
+              </div>
+            </div>
+            
+            <p class="action-desc">
+              Trigger a software restart of the microcontroller. The web server will momentarily go offline and reconnect automatically.
+            </p>
+
+            <div class="action-btn-group">
+              <button id="btn-restart" class="btn btn-danger">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                  <line x1="12" y1="2" x2="12" y2="12"></line>
+                </svg>
+                RESTART ESP32
+              </button>
+            </div>
+          </section>
+
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="dashboard-footer">
+      <div>ESP32 Web Dashboard &bull; Lightweight Standalone Monitor</div>
+      <div class="footer-sub">Pure Vanilla JS / CSS &bull; Zero External CDN Dependencies</div>
+    </footer>
+
+  </div>
+
+  <!-- Restart Confirmation & Progress Modal -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div id="modal-confirm-view">
+        <h3 class="modal-title">Restart Confirmation</h3>
+        <p class="modal-text">Are you sure you want to restart the ESP32 microcontroller? Current network connections will be briefly interrupted.</p>
+        <div class="modal-actions">
+          <button id="modal-cancel-btn" class="btn btn-secondary">Cancel</button>
+          <button id="modal-proceed-btn" class="btn btn-danger">Yes, Restart Now</button>
+        </div>
+      </div>
+      
+      <div id="modal-progress-view" class="hidden">
+        <div class="spinner"></div>
+        <h3 class="modal-title" id="reboot-title">Restarting ESP32...</h3>
+        <p class="modal-text" id="reboot-msg">Please wait while the device reboots and reconnects to Wi-Fi.</p>
+        <div class="reboot-countdown" id="reboot-countdown">10s</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
